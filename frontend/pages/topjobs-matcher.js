@@ -296,7 +296,7 @@ export default function TopJobsMatcher() {
 
             <div className="mt-5">
               <h4 className="text-xl font-semibold text-gray-800 mb-4">Matched TopJobs.lk Vacancies (Sorted by Match)</h4>
-              {isLoadingScrape ? ( // Changed from scrapedJobs.length === 0 && !isLoadingScrape
+              {isLoadingScrape ? (
                 <p className="text-center text-muted">Loading job listings...</p>
               ) : scrapedJobs.length === 0 ? (
                 <p className="text-center text-gray-500">Click &quot;Scrape Latest IT Jobs&quot; to fetch listings.</p>
@@ -309,8 +309,9 @@ export default function TopJobsMatcher() {
                   .flat() // Flatten the array of arrays to get individual match results
                   .sort((a, b) => b.match_percentage - a.match_percentage) // Sort by match percentage
                   .map((result, _index) => {
+                    // This variable is intentionally unused, so we can ignore it.
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const unusedIndex = _index; // Assign _index to a new variable and ignore it
+                    const unusedIndex = _index;
                     // result here is the individual match object, which contains the job details
                     const job = result; // For clarity, assign result to job
                     const percentage = Math.min(100, Math.max(0, Math.round(job.match_percentage)));
@@ -327,13 +328,11 @@ export default function TopJobsMatcher() {
                           <p className="text-md font-medium text-gray-700"><strong>Match Percentage:</strong></p>
                           <div className="flex flex-col items-center">
                             <div style={{ width: 100, height: 100 }}>
-                              {/* eslint-disable-next-line react/no-unescaped-entities */}
                               <CircularProgressbar
                                 value={percentage}
                                 text={`${percentage}%`}
                                 styles={buildStyles({
                                   pathColor: percentage > 75 ? '#2ecc71' : percentage > 50 ? '#f39c12' : '#e74c3c',
-                                  // eslint-disable-next-line react/no-unescaped-entities
                                   textColor: '#000',
                                   trailColor: '#eee',
                                   textSize: '18px',
