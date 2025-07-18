@@ -1,0 +1,514 @@
+/* L4 FYP/frontend/src/app/globals.css */
+
+/* Define CSS Variables for the Dark Theme */
+:root {
+  --color-background-dark: #1a1a1a; /* Very dark grey/almost black for main background */
+  --color-background-card: #2c2c2c; /* Slightly lighter dark for cards/containers */
+  --color-text-light: #f0f0f0; /* Light text color */
+  --color-text-medium: #b0b0b0; /* Medium grey text for secondary info */
+  --color-accent: #ff6b6b; /* Bright red/orange accent */
+  --color-accent-dark: #cc5656; /* Darker accent for hover/active states */
+  --color-border-subtle: #444444; /* Subtle border color */
+  --color-success: #2ecc71; /* Green for success messages */
+  --color-error: #e74c3c; /* Red for error messages */
+  --color-info: #3498db; /* Blue for info messages */
+}
+
+/* Base Body Styles */
+body {
+  background-color: var(--color-background-dark);
+  color: var(--color-text-light);
+  font-family: 'Inter', sans-serif; /* Using Inter font */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* General Container Styles */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem; /* Equivalent to p-4 */
+}
+
+/* Card Styles */
+.card-container {
+  background-color: var(--color-background-card);
+  padding: 2rem; /* Equivalent to p-8 */
+  border-radius: 1rem; /* Equivalent to rounded-2xl */
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Equivalent to shadow-lg */
+  width: 100%;
+  max-width: 32rem; /* Equivalent to max-w-md */
+  border: 1px solid var(--color-border-subtle);
+}
+
+/* Text Styles */
+.text-heading {
+  font-size: 2.25rem; /* Equivalent to text-3xl */
+  font-weight: 700; /* Equivalent to font-bold */
+  text-align: center;
+  color: var(--color-text-light);
+  margin-bottom: 1.5rem; /* Equivalent to mb-6 */
+}
+
+.text-subheading {
+  font-size: 1.875rem; /* Equivalent to text-3xl */
+  font-weight: 600; /* Equivalent to font-semibold */
+  color: var(--color-text-medium);
+  margin-bottom: 2rem; /* Equivalent to mb-8 */
+}
+
+.text-paragraph {
+  font-size: 1.125rem; /* Equivalent to text-lg */
+  color: var(--color-text-medium);
+  margin-bottom: 2.5rem; /* Equivalent to mb-10 */
+  max-width: 65ch; /* Equivalent to max-w-prose */
+}
+
+.text-label {
+  display: block;
+  color: var(--color-text-medium);
+  font-size: 0.875rem; /* Equivalent to text-sm */
+  font-weight: 700; /* Equivalent to font-bold */
+  margin-bottom: 0.5rem; /* Equivalent to mb-2 */
+}
+
+/* Input Field Styles */
+.input-field {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06); /* Equivalent to shadow */
+  appearance: none;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.5rem; /* Equivalent to rounded-lg */
+  width: 100%;
+  padding: 0.75rem 1rem; /* Equivalent to py-3 px-4 */
+  color: var(--color-text-light);
+  background-color: var(--color-background-dark);
+  line-height: 1.25; /* Equivalent to leading-tight */
+  outline: none;
+}
+
+.input-field:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.5); /* Equivalent to focus:ring-2 focus:ring-accent */
+}
+
+/* Button Styles */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600; /* Equivalent to font-semibold */
+  height: 2.5rem; /* Equivalent to h-10 */
+  padding: 0.75rem 1rem; /* Equivalent to px-4 */
+  border-radius: 9999px; /* Equivalent to rounded-full */
+  transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* Equivalent to shadow-lg */
+  border: none; /* Default to no border, add for outline buttons */
+  cursor: pointer;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-dark);
+}
+
+.btn-secondary {
+  background-color: var(--color-background-card);
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-accent);
+  color: white;
+}
+
+.btn-danger {
+  background-color: #dc3545; /* Bootstrap red */
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+}
+
+/* Message Styles */
+.message-success {
+  color: var(--color-success);
+  text-align: center;
+  margin-top: 1rem; /* Equivalent to mt-4 */
+}
+
+.message-error {
+  color: var(--color-error);
+  text-align: center;
+  margin-top: 1rem; /* Equivalent to mt-4 */
+}
+
+.message-info {
+  background-color: rgba(52, 152, 219, 0.2); /* Light blue background */
+  color: var(--color-info);
+  padding: 0.75rem; /* Equivalent to p-3 */
+  border-radius: 0.5rem; /* Equivalent to rounded-lg */
+  margin-top: 1rem; /* Equivalent to mt-3 */
+  text-align: center;
+}
+
+/* Utility Classes for Layout and Spacing */
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.gap-4 {
+  gap: 1rem; /* Equivalent to gap-4 */
+}
+
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mb-8 { margin-bottom: 2rem; }
+.mb-10 { margin-bottom: 2.5rem; }
+.mb-12 { margin-bottom: 3rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 0.75rem; }
+.mt-4 { margin-top: 1rem; }
+.mt-5 { margin-top: 1.25rem; }
+.mt-6 { margin-top: 1.5rem; }
+.mt-12 { margin-top: 3rem; }
+.py-12 { padding-top: 3rem; padding-bottom: 3rem; }
+.px-6 { padding-left: 1.5rem; padding-right: 1.5rem; }
+.pt-8 { padding-top: 2rem; }
+
+.w-full { width: 100%; }
+.max-w-md { max-width: 28rem; } /* Adjusted from 32rem in card-container for consistency with Tailwind's max-w-md */
+.max-w-4xl { max-width: 56rem; }
+.mx-auto { margin-left: auto; margin-right: auto; }
+
+/* Image and Border Styles */
+.img-circle-border {
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid var(--color-accent);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* Equivalent to shadow-lg */
+}
+
+/* Animation */
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Responsive adjustments */
+@media (min-width: 640px) { /* sm breakpoint */
+  .sm-flex-row { flex-direction: row; }
+  .sm-text-left { text-align: left; }
+  .sm-w-auto { width: auto; }
+  .sm-h-12 { height: 3rem; }
+  .sm-px-5 { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .sm-text-base { font-size: 1rem; }
+}
+
+@media (min-width: 768px) { /* md breakpoint */
+  .md-grid-cols-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Specific styles for resume-matcher page */
+.resume-matcher-container {
+  padding: 2.5rem; /* p-10 */
+}
+
+.job-card {
+  border: 2px solid var(--color-border-subtle);
+  border-radius: 1rem; /* rounded-2xl */
+  padding: 1rem; /* p-4 */
+  margin: 1rem; /* m-4 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  background-color: var(--color-background-card);
+}
+
+@media (min-width: 768px) { /* md breakpoint */
+  .job-card {
+    flex-direction: row;
+  }
+  .job-card-text-section {
+    width: 75%; /* md:w-3/4 */
+    margin-bottom: 0; /* md:mb-0 */
+  }
+  .job-card-percentage-section {
+    width: 25%; /* md:w-1/4 */
+  }
+}
+
+.job-card-text-section p {
+  margin-bottom: 0.25rem; /* mb-1 */
+}
+
+.job-card-percentage-circle {
+  width: 6rem; /* w-24 */
+  height: 6rem; /* h-24 */
+  margin-left: auto;
+  margin-right: auto;
+  border-radius: 50%;
+  border: 4px solid var(--color-success); /* border-green-500 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700; /* font-bold */
+  color: var(--color-success); /* text-green-700 */
+  background-color: rgba(46, 204, 113, 0.1); /* bg-green-100 */
+}
+
+.job-card-apply-btn {
+  margin-top: 1rem; /* mt-4 */
+  padding: 0.625rem 1.5rem; /* px-6 py-2 */
+  border: 1px solid #3498db; /* border-blue-600 */
+  color: #3498db; /* text-blue-600 */
+  border-radius: 9999px; /* rounded-full */
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  background-color: transparent;
+}
+
+.job-card-apply-btn:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+.matching-keywords-container {
+  margin-top: 1rem; /* mt-4 */
+  padding: 0.75rem; /* p-3 */
+  background-color: var(--color-background-dark); /* bg-gray-50 equivalent */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+  border: 1px solid var(--color-border-subtle);
+}
+
+.matching-keywords-container h6 {
+  font-size: 1.125rem; /* text-lg */
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-medium); /* text-gray-700 */
+  margin-bottom: 0.75rem; /* mb-3 */
+}
+
+.matching-keywords-container p {
+  font-size: 1rem; /* text-md */
+  font-weight: 500; /* font-medium */
+  color: var(--color-text-medium); /* text-gray-600 */
+  margin-bottom: 0.75rem; /* mb-3 */
+}
+
+.keyword-badge-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem; /* gap-2 */
+  margin-top: 0.5rem; /* mt-2 */
+}
+
+.keyword-badge {
+  padding: 0.25rem 0.75rem; /* px-3 py-1 */
+  background-color: rgba(46, 204, 113, 0.2); /* bg-green-200 */
+  color: var(--color-success); /* text-green-800 */
+  border-radius: 9999px; /* rounded-full */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+}
+
+.no-keywords-message {
+  color: var(--color-text-medium); /* text-gray-500 */
+  font-size: 0.875rem; /* text-sm */
+}
+
+
+/* Specific styles for resume-matcher page */
+.resume-matcher-container {
+  padding: 2.5rem; /* p-10 */
+}
+
+.card-header-primary {
+  background-color: var(--color-accent); /* bg-primary */
+  color: white;
+  padding: 1rem; /* p-4 */
+  border-top-left-radius: 1rem; /* rounded-t-2xl */
+  border-top-right-radius: 1rem;
+}
+
+.card-body-padded {
+  padding: 1rem; /* p-4 */
+}
+
+.form-group-mb {
+  margin-bottom: 0.75rem; /* mb-3 */
+}
+
+.form-label-custom {
+  color: var(--color-text-medium); /* text-gray-700 */
+  font-weight: 500; /* font-medium */
+}
+
+.form-control-large {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.5rem; /* rounded-lg */
+  padding: 0.5rem; /* p-2 */
+  font-size: 1.125rem; /* text-lg */
+  background-color: var(--color-background-dark);
+  color: var(--color-text-light);
+  width: 100%;
+}
+
+.btn-success-custom {
+  background-color: var(--color-success);
+  color: white;
+  margin-right: 0.75rem; /* me-3 */
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border-radius: 9999px; /* rounded-full */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  transition: background-color 0.3s ease;
+}
+
+.btn-success-custom:hover {
+  background-color: #27ae60;
+}
+
+.btn-secondary-custom {
+  background-color: #6c757d; /* Bootstrap secondary grey */
+  color: white;
+  padding: 0.5rem 1rem; /* px-4 py-2 */
+  border-radius: 9999px; /* rounded-full */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  transition: background-color 0.3s ease;
+}
+
+.btn-secondary-custom:hover {
+  background-color: #5a6268;
+}
+
+.alert-info-custom {
+  background-color: rgba(52, 152, 219, 0.2); /* bg-blue-100 */
+  color: var(--color-info); /* text-blue-800 */
+  margin-top: 0.75rem; /* mt-3 */
+  padding: 0.75rem; /* p-3 */
+  border-radius: 0.5rem; /* rounded-lg */
+}
+
+.job-section-title {
+  font-size: 1.25rem; /* text-xl */
+  font-weight: 600; /* font-semibold */
+  color: var(--color-text-light); /* text-gray-800 */
+  margin-bottom: 1rem; /* mb-4 */
+}
+
+.job-item-card {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 1rem; /* rounded-2xl */
+  padding: 1rem; /* p-4 */
+  margin-bottom: 1rem; /* mb-4 */
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06); /* shadow-sm */
+  background-color: var(--color-background-card);
+}
+
+.job-item-card strong {
+  color: var(--color-text-light); /* text-gray-800 */
+}
+
+.match-resume-section {
+  margin-top: 1rem; /* mt-4 */
+  border-top: 1px solid var(--color-border-subtle); /* border-top pt-3 border-gray-200 */
+  padding-top: 0.75rem;
+}
+
+.match-resume-title {
+  font-size: 1rem; /* text-md */
+  font-weight: 500; /* font-medium */
+  color: var(--color-text-medium); /* text-gray-700 */
+}
+
+.progress-bar-container-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.progress-bar-size {
+  width: 6.25rem; /* w-24 h-24 */
+  height: 6.25rem;
+}
+
+.btn-outline-dark-custom {
+  border: 1px solid var(--color-border-subtle); /* border-outline-dark */
+  color: var(--color-text-light);
+  margin-top: 0.75rem; /* mt-3 */
+  padding: 0.5rem 0.75rem; /* px-3 */
+  border-radius: 9999px; /* rounded-full */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  transition: background-color 0.3s ease;
+  background-color: transparent;
+}
+
+.btn-outline-dark-custom:hover {
+  background-color: rgba(255, 255, 255, 0.1); /* hover:bg-gray-100 */
+}
+
+.matched-keywords-section {
+  margin-top: 0.5rem; /* mt-2 */
+  width: 100%; /* w-full */
+}
+
+.apply-button-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1rem; /* mt-4 */
+}
+
+.btn-primary-apply {
+  background-color: #3498db; /* Bootstrap primary blue */
+  color: white;
+  padding: 0.625rem 1.5rem; /* px-6 py-2 */
+  border-radius: 9999px; /* rounded-full */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary-apply:hover {
+  background-color: #2874a6;
+}
+
+.no-vacancies-message {
+  text-align: center;
+  color: var(--color-text-medium);
+}
