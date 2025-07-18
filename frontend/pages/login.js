@@ -118,10 +118,11 @@ export default function LoginPage() {
             </div>
           )}
           <p className="mt-3 text-center">
-            Don't have an account? <Link href="/registration">Register here</Link>
+            Don&apos;t have an account? <Link href="/registration">Register here</Link>
           </p>
         </div>
       </div>
     </div>
   );
 }
+

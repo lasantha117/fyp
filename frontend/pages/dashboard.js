@@ -158,7 +158,7 @@ export default function CompanyDashboard() {
                   <div className="card-header">Applications Received</div>
                   <div className="card-body">
                     <h5 className="card-title display-4">{myApplicationsCount}</h5>
-                    <p className="card-text">Total applications for your company's jobs.</p>
+                    <p className="card-text">Total applications for your company&apos;s jobs.</p>
                     <button className="btn btn-light btn-sm mt-2" onClick={handleViewApplicationsClick}>
                       View Applications
                     </button>
@@ -234,3 +234,4 @@ export default function CompanyDashboard() {
     </div>
   );
 }
+

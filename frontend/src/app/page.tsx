@@ -44,7 +44,7 @@ export default function Home() {
         </div>
 
         <h1 className="text-heading"> {/* Replaced text-5xl font-extrabold text-light-foreground mb-4 leading-tight */}
-          Hello. I'm <span style={{ color: 'var(--color-accent)' }}>Jensen</span>
+          Hello. I&apos;m <span style={{ color: 'var(--color-accent)' }}>Jensen</span>
         </h1>
         <h2 className="text-subheading"> {/* Replaced text-3xl font-semibold text-medium-foreground mb-8 */}
           Software Developer
@@ -145,3 +145,4 @@ export default function Home() {
     </div>
   );
 }
+

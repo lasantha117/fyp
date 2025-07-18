@@ -297,16 +297,16 @@ export default function TopJobsMatcher() {
             <div className="mt-5">
               <h4 className="text-xl font-semibold text-gray-800 mb-4">Matched TopJobs.lk Vacancies (Sorted by Match)</h4>
               {scrapedJobs.length === 0 && !isLoadingScrape ? (
-                <p className="text-center text-gray-500">Click "Scrape Latest IT Jobs" to fetch listings.</p>
+                <p className="text-center text-gray-500">Click &quot;Scrape Latest IT Jobs&quot; to fetch listings.</p>
               ) : isLoadingMatch ? (
                 <p className="text-center text-muted">Matching jobs...</p>
               ) : Object.keys(matchedResults).length === 0 && scrapedJobs.length > 0 ? (
-                <p className="text-center text-gray-500">Upload your resume and click "Match My Resume to Scraped Jobs" to see results.</p>
+                <p className="text-center text-gray-500">Upload your resume and click &quot;Match My Resume to Scraped Jobs&quot; to see results.</p>
               ) : (
                 Object.values(matchedResults)
                   .flat() // Flatten the array of arrays to get individual match results
                   .sort((a, b) => b.match_percentage - a.match_percentage) // Sort by match percentage
-                  .map((result, index) => {
+                  .map((result, _index) => { // Changed 'index' to '_index'
                     // result here is the individual match object, which contains the job details
                     const job = result; // For clarity, assign result to job
                     const percentage = Math.min(100, Math.max(0, Math.round(job.match_percentage)));
@@ -385,3 +385,4 @@ export default function TopJobsMatcher() {
     </div>
   );
 }
+

@@ -2,7 +2,7 @@
   "name": "resume-matcher-frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://lasantha117.github.io/fyp", 
+  "homepage": "https://lasantha117.github.io/fyp",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -32,6 +32,6 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
     "typescript": "^5",
-    "gh-pages": "latest" 
+    "gh-pages": "latest"
   }
 }

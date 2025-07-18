@@ -20,6 +20,7 @@ export default function ResumeMatcher() {
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [user, setUser] = useState(null); // State to hold authenticated user
   const [userRole, setUserRole] = useState(null); // State to hold user's role
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [selectedResumeText, setSelectedResumeText] = useState(''); // Stores extracted text of the single selected resume
 
   const auth = getAuth();
@@ -45,7 +46,7 @@ export default function ResumeMatcher() {
       }
     });
     return () => unsubscribe(); // Cleanup subscription
-  }, [auth]);
+  }, [auth, router]);
 
   // Effect hook to fetch all job vacancies from Firebase Realtime Database
   useEffect(() => {
@@ -348,7 +349,7 @@ export default function ResumeMatcher() {
                   return { job, matchResults, percentage };
                 })
                 .sort((a, b) => b.percentage - a.percentage)
-                .map(({ job, matchResults }, index) => {
+                .map(({ job, matchResults }, _index) => { // Changed 'index' to '_index'
                   // Determine if the "Apply Now" button should be disabled for this specific job
                   const canApply = user && userRole === 'candidate' && resumes.length > 0; // Check if a resume is selected
                   // Check if it's a Firebase job with a missing companyUserId
@@ -456,3 +457,4 @@ export default function ResumeMatcher() {
     </div>
   );
 }
+
