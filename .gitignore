@@ -1,0 +1,17 @@
+# Node.js
+node_modules/
+.next/
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+env/
+venv/
+
+# Specific project exclusions
+backend/local_resumes/
+uploads/
+temp_uploads/
+firebase-adminsdk.json
