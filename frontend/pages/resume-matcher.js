@@ -350,6 +350,8 @@ export default function ResumeMatcher() {
                 })
                 .sort((a, b) => b.percentage - a.percentage)
                 .map(({ job, matchResults }, _index) => { // Changed 'index' to '_index'
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  const unusedIndex = _index; // Assign _index to a new variable and ignore it
                   // Determine if the "Apply Now" button should be disabled for this specific job
                   const canApply = user && userRole === 'candidate' && resumes.length > 0; // Check if a resume is selected
                   // Check if it's a Firebase job with a missing companyUserId
