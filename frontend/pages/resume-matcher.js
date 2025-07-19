@@ -4,9 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
 import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue, get } from 'firebase/database';
 import { getAuth, onAuthStateChanged } from 'firebase/auth'; // Import auth functions
-import { get } from 'firebase/database'; // Import get for fetching user role
 import { useRouter } from 'next/router'; // Import useRouter for navigation
 import '../lib/firebase'; // Ensure correct path to Firebase config
 import MatchingKeywords from '../components/MatchingKeywords'; // Import the MatchingKeywords component
@@ -15,13 +14,12 @@ export default function ResumeMatcher() {
   const [resumes, setResumes] = useState([]);
   const [globalMessage, setGlobalMessage] = useState(''); // Renamed from 'message' for clarity
   const [jobMessages, setJobMessages] = useState({}); // New state for messages per job ID
-  const [matchedResults, setMatchedResults] = useState({});
-  const [allVacancies, setAllVacancies] = useState([]);
+  const [matchedResults, setMatchedResults] = useState({}); // Stores matching results for all jobs
+  const [allVacancies, setAllVacancies] = useState([]); // All job vacancies from Firebase
   const [isLoadingJobs, setIsLoadingJobs] = useState(true);
   const [user, setUser] = useState(null); // State to hold authenticated user
   const [userRole, setUserRole] = useState(null); // State to hold user's role
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedResumeText, setSelectedResumeText] = useState(''); // Stores extracted text of the single selected resume
+  const [selectedResumeFile, setSelectedResumeFile] = useState(null); // Stores the actual file object
 
   const auth = getAuth();
   const router = useRouter(); // Initialize router
@@ -43,6 +41,7 @@ export default function ResumeMatcher() {
       } else {
         setUser(null);
         setUserRole(null);
+        router.push('/login'); // Redirect to login if not authenticated
       }
     });
     return () => unsubscribe(); // Cleanup subscription
@@ -65,7 +64,7 @@ export default function ResumeMatcher() {
           Job_Title: data[key].Job_Title || 'Untitled Job',
           Company_Name: data[key].Company_Name || 'Unknown Company',
           Job_Description: data[key].Job_Description || 'No description provided.',
-          Required_Skills: data[key].Required_Skills || '',
+          Required_Skills: data[key].Required_Skills || '', // Ensure skills are included
           Education_Level: data[key].Education_Level || '',
           Experience_Required: data[key].Experience_Required || '',
           Location: data[key].Location || '',
@@ -89,15 +88,15 @@ export default function ResumeMatcher() {
 
   // Handler for file input change
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setResumes(files);
+    const file = e.target.files[0]; // Only allow one file
+    setResumes(file ? [file] : []); // Store as an array for consistency with previous structure if needed
+    setSelectedResumeFile(file || null); // Store the actual file object
     setGlobalMessage('');
     setMatchedResults({});
-    setSelectedResumeText(''); // Clear previously extracted text
     setJobMessages({}); // Clear all job-specific messages
   };
 
-  // Function to extract text from a file (client-side)
+  // Function to extract text from a file (client-side or via backend for PDF/DOCX)
   const extractTextFromFile = useCallback(async (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -110,7 +109,9 @@ export default function ResumeMatcher() {
           // For PDF/DOCX, send to backend for extraction
           const formData = new FormData();
           formData.append('resumes', file);
-          formData.append('job_description', 'dummy'); // Dummy job_description
+          // A dummy job_description is needed by the backend's /api/matcher,
+          // but its content doesn't matter here as we only need text extraction.
+          formData.append('job_description', 'dummy'); 
           try {
             const response = await axios.post('http://localhost:5000/api/matcher', formData, {
               headers: { 'Content-Type': 'multipart/form-data' },
@@ -140,55 +141,54 @@ export default function ResumeMatcher() {
       return;
     }
 
-    if (resumes.length === 0) {
-      setGlobalMessage('⚠️ Please upload at least one resume.');
+    if (!selectedResumeFile) {
+      setGlobalMessage('⚠️ Please upload a resume file.');
       return;
     }
 
-    setGlobalMessage('🔍 Matching resumes to all job vacancies. Please wait...');
+    if (allVacancies.length === 0) {
+      setGlobalMessage('ℹ️ No job vacancies available to match against.');
+      return;
+    }
+
+    setGlobalMessage('🔍 Matching your resume to all job vacancies. Please wait...');
     setJobMessages({}); // Clear previous job-specific messages on new match
-    const results = {};
 
     try {
-      const resumeFile = resumes[0];
-      const extractedResumeText = await extractTextFromFile(resumeFile);
-      setSelectedResumeText(extractedResumeText);
+      const extractedResumeText = await extractTextFromFile(selectedResumeFile);
 
-      for (let job of allVacancies) {
-        // Basic validation for job data before sending to backend
-        if (!job.Job_ID || !job.Job_Title || !job.Job_Description) {
-            console.warn(`Skipping job with missing critical data for matching: ${job.Job_ID || 'Unknown ID'}`);
-            continue;
-        }
+      // Call the backend endpoint that matches against all jobs using skills
+      const response = await axios.post('http://localhost:5000/api/get_all_matched_jobs', {
+        resume_text: extractedResumeText,
+        jobList: allVacancies, // Send all vacancies to the backend
+      });
 
-        const formData = new FormData();
-        formData.append('resumes', resumeFile);
-        formData.append('job_description', job.Job_Description);
-
-        const response = await axios.post('http://localhost:5000/api/matcher', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-
-        if (response.data && response.data.results) {
-          results[job.Job_ID] = response.data.results.map(res => ({
-            ...res,
+      if (response.data && response.data.results) {
+        // Transform the results into an object keyed by Job_ID for easy lookup
+        const transformedResults = {};
+        response.data.results.forEach(job => {
+          transformedResults[job.Job_ID] = [{
+            filename: selectedResumeFile.name,
+            text: extractedResumeText, // Keep extracted text for potential future use
+            match_percentage: job.match_percentage,
+            matched_keywords: job.matching_words, // Use the keywords from backend
             jobTitle: job.Job_Title,
             company: job.Company_Name,
             jobDescription: job.Job_Description,
-            // Pass companyUserId, Job_URL, and Source from the original job object
-            companyUserId: job.companyUserId,
             jobUrl: job.Job_URL,
             source: job.Source,
-            showKeywords: false,
-          }));
-        }
+            companyUserId: job.companyUserId, // Ensure companyUserId is passed
+            showKeywords: false, // Initial state for showing keywords
+          }];
+        });
+        setMatchedResults(transformedResults);
+        setGlobalMessage('✅ Matching complete!');
+      } else {
+        setGlobalMessage('No matching results found or an error occurred during matching.');
       }
-
-      setMatchedResults(results);
-      setGlobalMessage(''); // Clear global message after matching
     } catch (error) {
       console.error('Error matching resumes:', error);
-      setGlobalMessage('🚫 Error matching resumes. Please ensure the backend is running and accessible.');
+      setGlobalMessage(`🚫 Error matching resumes: ${error.response?.data?.message || error.message}. Please ensure the backend is running and accessible.`);
     }
   };
 
@@ -199,15 +199,8 @@ export default function ResumeMatcher() {
       setJobMessages(prev => ({ ...prev, [job.Job_ID]: { text: '⚠️ Please log in as a candidate to apply for jobs.', type: 'danger' } }));
       return;
     }
-    if (resumes.length === 0) {
+    if (!selectedResumeFile) {
       setJobMessages(prev => ({ ...prev, [job.Job_ID]: { text: '⚠️ Please upload your resume first before applying.', type: 'danger' } }));
-      return;
-    }
-
-    // Get the first (and only) resume file from the state
-    const resumeFile = resumes[0];
-    if (!resumeFile) {
-      setJobMessages(prev => ({ ...prev, [job.Job_ID]: { text: '⚠️ Resume file not found. Please re-upload your resume.', type: 'danger' } }));
       return;
     }
 
@@ -221,7 +214,7 @@ export default function ResumeMatcher() {
     // --- END FIX ---
 
     // More robust check for all required fields from the job object and user session
-    if (!job.Job_ID || !user.uid || !user.email || !job.Job_Title || !job.Source) {
+    if (!job.Job_ID || !user.uid || !user.email || !selectedResumeFile || !job.Job_Title || !job.Source) {
       setJobMessages(prev => ({ ...prev, [job.Job_ID]: { text: '🚫 Missing critical data for application. Please ensure job data and user session are complete.', type: 'danger' } }));
       console.error("Missing application data:", {
         jobId: job.Job_ID,
@@ -230,7 +223,8 @@ export default function ResumeMatcher() {
         candidateEmail: user.email,
         jobTitle: job.Job_Title,
         jobUrl: job.Job_URL,
-        jobSource: job.Source
+        jobSource: job.Source,
+        resumeFile: selectedResumeFile.name // Just for logging
       });
       return;
     }
@@ -245,7 +239,7 @@ export default function ResumeMatcher() {
         : 0; // Default to 0 if no match data
 
       const formData = new FormData();
-      formData.append('resume_file', resumeFile); // Append the actual resume file
+      formData.append('resume_file', selectedResumeFile); // Append the actual resume file
       formData.append('jobId', job.Job_ID);
       formData.append('companyUserId', job.companyUserId || ''); // Ensure it's a string
       formData.append('candidateUserId', user.uid);
@@ -285,16 +279,11 @@ export default function ResumeMatcher() {
   // Handler to clear all uploaded files and results
   const handleClear = () => {
     setResumes([]);
+    setSelectedResumeFile(null);
     setMatchedResults({});
     setGlobalMessage('');
     setJobMessages({}); // Clear all job-specific messages
-    setSelectedResumeText('');
-    document.getElementById('resumes').value = null;
-  };
-
-  // Helper function to get matching results for a specific job by its ID
-  const getMatchingResult = (jobId) => {
-    return matchedResults[jobId] || [];
+    document.getElementById('resumes').value = null; // Clear file input
   };
 
   return (
@@ -315,7 +304,7 @@ export default function ResumeMatcher() {
         <div className="card-body p-4">
           <form onSubmit={handleSubmit} className="mb-4">
             <div className="form-group mb-3">
-              <label htmlFor="resumes" className="form-label text-gray-700 font-medium">Upload Resumes</label>
+              <label htmlFor="resumes" className="form-label text-gray-700 font-medium">Upload Resume (PDF, DOCX, TXT)</label>
               <input
                 type="file"
                 className="form-control form-control-lg border rounded-lg p-2"
@@ -324,9 +313,12 @@ export default function ResumeMatcher() {
                 accept=".pdf,.docx,.txt"
                 onChange={handleFileChange}
               />
+              {selectedResumeFile && (
+                <p className="mt-2 text-sm text-gray-600">Selected file: <span className="font-semibold">{selectedResumeFile.name}</span></p>
+              )}
             </div>
 
-            <button type="submit" className="btn btn-success me-3 px-4 py-2 rounded-full shadow-md hover:bg-green-600 transition duration-300" disabled={resumes.length === 0 || !user || userRole !== 'candidate'}>
+            <button type="submit" className="btn btn-success me-3 px-4 py-2 rounded-full shadow-md hover:bg-green-600 transition duration-300" disabled={!selectedResumeFile || !user || userRole !== 'candidate' || allVacancies.length === 0}>
               {user && userRole === 'candidate' ? 'Match Resume' : 'Login as Candidate to Match'}
             </button>
             <button type="button" className="btn btn-secondary px-4 py-2 rounded-full shadow-md hover:bg-gray-600 transition duration-300" onClick={handleClear}>Clear Results</button>
@@ -341,22 +333,28 @@ export default function ResumeMatcher() {
             ) : allVacancies.length === 0 ? (
               <p className="text-center text-gray-500">No job vacancies available.</p>
             ) : (
+              // Sort jobs by match percentage if results are available, otherwise display as is
               allVacancies
-                .map((job) => {
-                  const matchResults = getMatchingResult(job.Job_ID);
-                  const topMatch = matchResults[0];
-                  const percentage = topMatch ? Math.round(topMatch.match_percentage) : 0;
-                  return { job, matchResults, percentage };
+                .map(job => {
+                  // Find the corresponding match result for this job
+                  const matchResult = matchedResults[job.Job_ID] ? matchedResults[job.Job_ID][0] : null;
+                  const percentage = matchResult ? Math.min(100, Math.max(0, Math.round(matchResult.match_percentage))) : 0;
+                  const matchingWords = matchResult ? matchResult.matched_keywords : [];
+                  const showKeywords = matchResult ? matchResult.showKeywords : false;
+
+                  return {
+                    ...job, // Spread all original job properties
+                    match_percentage: percentage, // Add match percentage
+                    matching_words: matchingWords, // Add matching words
+                    showKeywords: showKeywords, // Add showKeywords state
+                  };
                 })
-                .sort((a, b) => b.percentage - a.percentage)
-                .map(({ job, matchResults }, _index) => { // Changed 'index' to '_index'
-                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                  const unusedIndex = _index; // Assign _index to a new variable and ignore it
-                  // Determine if the "Apply Now" button should be disabled for this specific job
-                  const canApply = user && userRole === 'candidate' && resumes.length > 0; // Check if a resume is selected
-                  // Check if it's a Firebase job with a missing companyUserId
+                .sort((a, b) => b.match_percentage - a.match_percentage) // Sort by match percentage
+                .map((job) => {
+                  const percentage = job.match_percentage; // Now directly from the mapped job object
+                  const canApply = user && userRole === 'candidate' && selectedResumeFile;
                   const isFirebaseJobWithoutCompanyId = job.Source === 'Firebase' && !job.companyUserId;
-                  const currentJobMessage = jobMessages[job.Job_ID]; // Get message for this specific job
+                  const currentJobMessage = jobMessages[job.Job_ID];
 
                   return (
                     <div key={job.Job_ID} className="border rounded-2xl p-4 mb-4 shadow-md bg-white">
@@ -375,53 +373,56 @@ export default function ResumeMatcher() {
                           <p className="mb-1"><strong className="text-gray-800">Job Link:</strong> <a href={job.Job_URL} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">View Job</a></p>
                       )}
 
-                      {matchResults.length > 0 && matchResults.map((result, idx) => {
-                        const percentage = Math.min(100, Math.max(0, Math.round(result.match_percentage)));
+                      {/* Display match percentage and keywords only if a match has been run */}
+                      {Object.keys(matchedResults).length > 0 && (
+                        <div className="mt-4 border-t pt-3 border-gray-200">
+                          <p className="text-md font-medium text-gray-700"><strong>Match Percentage:</strong></p>
+                          <div className="flex flex-col items-center">
+                            <div style={{ width: 100, height: 100 }}>
+                              <CircularProgressbar
+                                value={percentage}
+                                text={`${percentage}%`}
+                                styles={buildStyles({
+                                  pathColor: percentage > 75 ? '#2ecc71' : percentage > 50 ? '#f39c12' : '#e74c3c',
+                                  textColor: '#000',
+                                  trailColor: '#eee',
+                                  textSize: '18px',
+                                })}
+                              />
+                            </div>
+                            {job.matching_words && job.matching_words.length > 0 && (
+                                <button
+                                    className="btn btn-outline-dark mt-3 px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition duration-300"
+                                    onClick={() => {
+                                        setMatchedResults(prev => {
+                                            const updated = { ...prev };
+                                            // Find the specific result object within the array for this job ID
+                                            // and toggle its showKeywords property.
+                                            // We need to find the entry in matchedResults that corresponds to this job.
+                                            if (updated[job.Job_ID] && updated[job.Job_ID][0]) {
+                                                updated[job.Job_ID][0].showKeywords = !updated[job.Job_ID][0].showKeywords;
+                                            }
+                                            return { ...updated }; // Return a new object to trigger re-render
+                                        });
+                                    }}
+                                >
+                                    {job.showKeywords ? 'Hide Matched Words' : 'Show Matched Words'}
+                                </button>
+                            )}
 
-                        return (
-                          <div key={idx} className="mt-4 border-t pt-3 border-gray-200">
-                            <p className="text-md font-medium text-gray-700"><strong>Matched Resume:</strong> {result.filename}</p>
-                            <div className="flex flex-col items-center">
-                              <div style={{ width: 100, height: 100 }}>
-                                <CircularProgressbar
-                                  value={percentage}
-                                  text={`${percentage}%`}
-                                  styles={buildStyles({
-                                    pathColor: '#2ecc71',
-                                    textColor: '#000',
-                                    trailColor: '#eee',
-                                    textSize: '18px',
-                                  })}
+
+                            {job.showKeywords && (
+                              <div className="mt-2 w-full">
+                                <MatchingKeywords
+                                  // Pass the job object directly, as it now contains matching_words
+                                  job={job}
                                 />
                               </div>
-                              <button
-                                className="btn btn-outline-dark mt-3 px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition duration-300"
-                                onClick={() => {
-                                  setMatchedResults(prev => {
-                                    const updated = { ...prev };
-                                    const jobSpecificResults = updated[job.Job_ID];
-                                    if (jobSpecificResults && jobSpecificResults[idx]) {
-                                      jobSpecificResults[idx].showKeywords = !jobSpecificResults[idx].showKeywords;
-                                    }
-                                    return updated;
-                                  });
-                                }}
-                              >
-                                {result.showKeywords ? 'Hide Matched Words' : 'Show Matched Words'}
-                              </button>
-
-                              {result.showKeywords && (
-                                <div className="mt-2 w-full">
-                                  <MatchingKeywords
-                                    jobDescription={job.Job_Description}
-                                    resumes={[result]}
-                                  />
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </div>
-                        );
-                      })}
+                        </div>
+                      )}
+
 
                       {/* Apply Button */}
                       <div className="flex flex-col items-center mt-4">
@@ -459,4 +460,3 @@ export default function ResumeMatcher() {
     </div>
   );
 }
-

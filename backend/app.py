@@ -3,8 +3,9 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 import os
-from match_percentage import match_percentage
-from firebase_admin import credentials, db, initialize_app # Removed storage import
+# Import both matching functions
+from match_percentage import calculate_semantic_match, calculate_skill_keyword_match
+from firebase_admin import credentials, db, initialize_app
 import firebase_admin
 from werkzeug.utils import secure_filename
 import docx2txt
@@ -221,46 +222,68 @@ def get_jobs():
 def match_resume():
     """
     API endpoint to match uploaded resumes against a single job description.
-    This endpoint is primarily used for text extraction from resume files.
-    For comprehensive matching against all job fields (description, skills),
-    use the /api/get_all_matched_jobs endpoint.
+    This endpoint is now updated to primarily use skill-based matching if
+    'required_skills' is provided, otherwise falls back to semantic matching
+    with the full job description.
     """
     resumes = request.files.getlist("resumes")
     job_description = request.form.get("job_description", "")
+    job_required_skills = request.form.get("required_skills", "") # New field for specific skills
 
     if not resumes:
         return jsonify({"message": "No resume files provided"}), 400
-    # Note: job_description is expected here for the matching function,
-    # but for pure text extraction from resume, it can be a dummy value.
 
     results = []
 
     for file in resumes:
         filename = secure_filename(file.filename)
         save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(save_path)
+        resume_text = "" # Initialize resume_text
+        
+        try:
+            # 1. Save the file
+            file.save(save_path)
+            print(f"File '{filename}' saved to '{save_path}'")
 
-        resume_text = extract_text(save_path)
+            # 2. Extract text
+            resume_text = extract_text(save_path)
 
-        if not resume_text:
-            print(f"Warning: Could not extract text from {filename}. Skipping.")
-            os.remove(save_path)
-            continue
+            if not resume_text:
+                print(f"Warning: Could not extract text from {filename}. Skipping matching for this file.")
+            else:
+                # 3. Perform matching
+                percentage = 0
+                keywords = []
 
-        # The `match_percentage` function expects a list for job_descriptions.
-        # Here, we're treating the single provided job_description as the target.
-        percentages, matched_keywords = match_percentage(resume_text, [job_description])
+                if job_required_skills:
+                    percentages, matched_keywords = calculate_skill_keyword_match(resume_text, [job_required_skills])
+                    percentage = percentages[0] if percentages else 0
+                    keywords = matched_keywords[0] if matched_keywords else []
+                elif job_description:
+                    percentages, matched_keywords = calculate_semantic_match(resume_text, [job_description])
+                    percentage = percentages[0] if percentages else 0
+                    keywords = matched_keywords[0] if matched_keywords else []
+                else:
+                    print(f"Warning: No job description or required skills provided for matching {filename}.")
 
-        percentage = percentages[0] if percentages else 0
-        keywords = matched_keywords[0] if matched_keywords else []
-
-        results.append({
-            "filename": filename,
-            "text": resume_text, # Return extracted text
-            "match_percentage": round(percentage, 2),
-            "matched_keywords": keywords
-        })
-        os.remove(save_path)
+                results.append({
+                    "filename": filename,
+                    "text": resume_text,
+                    "match_percentage": round(percentage, 2),
+                    "matched_keywords": keywords
+                })
+        except Exception as e:
+            print(f"Error processing file {filename}: {e}")
+            traceback.print_exc() # Print full traceback for debugging
+        finally:
+            # Always attempt to remove the file, but check if it exists first
+            if os.path.exists(save_path):
+                try:
+                    os.remove(save_path)
+                    print(f"File '{save_path}' removed successfully.")
+                except Exception as e:
+                    print(f"Error removing file {save_path}: {e}")
+                    traceback.print_exc() # Print full traceback for debugging
 
     return jsonify({"results": results})
 
@@ -268,8 +291,8 @@ def match_resume():
 def get_all_matched_jobs():
     """
     API endpoint to match a single resume text against a list of job vacancies.
-    Can receive jobs from Firebase (default) or from the frontend (e.g., scraped jobs).
-    This version emphasizes 'Required_Skills' and 'Job_Description' in matching.
+    This endpoint now specifically uses `calculate_skill_keyword_match`
+    referring only to the 'Required_Skills' section of jobs.
     """
     resume_text = request.json.get("resume_text", "")
     job_list_from_frontend = request.json.get("jobList", []) # Accept job list from frontend
@@ -288,18 +311,14 @@ def get_all_matched_jobs():
     if not jobs_to_match:
         return jsonify({"message": "No job vacancies found to match against."}), 200
 
-    # Extract job texts for matching, combining description and skills with emphasis
-    job_texts_for_matching = []
+    # Extract ONLY 'Required_Skills' text for matching
+    job_required_skills_texts = []
     for job in jobs_to_match:
-        job_desc = job.get("Job_Description", "")
         required_skills = job.get("Required_Skills", "")
-        # Combine job description and skills, emphasizing skills by repeating them twice
-        # This combined text will then be processed by extract_key_information in match_percentage.py
-        combined_text = (required_skills + " ") * 2 + job_desc
-        job_texts_for_matching.append(combined_text)
+        job_required_skills_texts.append(required_skills)
 
-    # Perform matching
-    percentages, matching_words = match_percentage(resume_text, job_texts_for_matching)
+    # Perform skill-based matching
+    percentages, matching_words = calculate_skill_keyword_match(resume_text, job_required_skills_texts)
 
     matched_jobs_results = []
     for i, job in enumerate(jobs_to_match):

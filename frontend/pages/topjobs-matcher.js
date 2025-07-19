@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import '../lib/firebase'; // Ensure Firebase is initialized
 
 export default function TopJobsMatcher() {
-  const [resumes, setResumes] = useState([]);
+  const [resumes, setResumes] = useState([]); // This will hold the file object(s)
   const [message, setMessage] = useState('');
   const [scrapedJobs, setScrapedJobs] = useState([]);
   const [matchedResults, setMatchedResults] = useState({});
@@ -20,7 +20,7 @@ export default function TopJobsMatcher() {
   const [isLoadingMatch, setIsLoadingMatch] = useState(false);
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
-  const [selectedResumeText, setSelectedResumeText] = useState('');
+  const [selectedResumeFile, setSelectedResumeFile] = useState(null); // Stores the actual file object
 
   const auth = getAuth();
   const router = useRouter();
@@ -84,11 +84,11 @@ export default function TopJobsMatcher() {
   }, []);
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setResumes(files);
+    const file = e.target.files[0]; // Only allow one file
+    setResumes(file ? [file] : []); // Store as an array for consistency
+    setSelectedResumeFile(file || null); // Store the actual file object
     setMessage('');
     setMatchedResults({});
-    setSelectedResumeText('');
   };
 
   const handleScrapeJobs = async () => {
@@ -100,7 +100,9 @@ export default function TopJobsMatcher() {
     try {
       const response = await axios.get('http://localhost:5000/api/scrape-topjobs');
       if (response.data && response.data.jobs) {
-        setScrapedJobs(response.data.jobs);
+        // Add a showKeywords property to each job for local UI state management
+        const jobsWithUIState = response.data.jobs.map(job => ({ ...job, showKeywords: false }));
+        setScrapedJobs(jobsWithUIState);
         setMessage(`✅ Found ${response.data.jobs.length} jobs from TopJobs.lk.`);
       } else {
         setMessage('No jobs found or an error occurred during scraping.');
@@ -118,7 +120,7 @@ export default function TopJobsMatcher() {
       setMessage('⚠️ Please log in as a candidate to match resumes.');
       return;
     }
-    if (resumes.length === 0) {
+    if (!selectedResumeFile) {
       setMessage('⚠️ Please upload your resume first.');
       return;
     }
@@ -132,9 +134,7 @@ export default function TopJobsMatcher() {
     setMatchedResults({});
 
     try {
-      const resumeFile = resumes[0];
-      const extractedResumeText = await extractTextFromFile(resumeFile);
-      setSelectedResumeText(extractedResumeText);
+      const extractedResumeText = await extractTextFromFile(selectedResumeFile);
 
       // Send extracted resume text and scraped jobs to the backend for matching
       const response = await axios.post('http://localhost:5000/api/get_all_matched_jobs', {
@@ -146,15 +146,16 @@ export default function TopJobsMatcher() {
         const transformedResults = {};
         response.data.results.forEach(job => {
           transformedResults[job.Job_ID] = [{
-            filename: resumeFile.name,
+            filename: selectedResumeFile.name,
             text: extractedResumeText,
             match_percentage: job.match_percentage,
-            matched_keywords: job.matching_words,
+            matched_keywords: job.matching_words, // Use the keywords from backend
             jobTitle: job.Job_Title,
             company: job.Company_Name,
             jobDescription: job.Job_Description,
             jobUrl: job.Job_URL, // Include job URL for external apply
             source: job.Source, // Include source
+            showKeywords: false, // Initial state for showing keywords
           }];
         });
         setMatchedResults(transformedResults);
@@ -175,19 +176,19 @@ export default function TopJobsMatcher() {
       setMessage('⚠️ Please log in as a candidate to apply for jobs.');
       return;
     }
-    if (!selectedResumeText) {
-      setMessage('⚠️ Please upload and match your resume first before applying.');
+    if (!selectedResumeFile) { // Check for the actual file object
+      setMessage('⚠️ Please upload and match your resume first before applying.', 'danger');
       return;
     }
 
     // Ensure all required fields for application are present
-    if (!job.Job_ID || !user.uid || !user.email || !selectedResumeText || !job.Job_Title || !job.Job_URL || !job.Source) {
+    if (!job.Job_ID || !user.uid || !user.email || !selectedResumeFile || !job.Job_Title || !job.Job_URL || !job.Source) {
       setMessage('🚫 Missing critical data for application. Cannot apply.');
       console.error("Missing application data for external job:", {
         jobId: job.Job_ID,
         candidateUserId: user.uid,
         candidateEmail: user.email,
-        resumeText: selectedResumeText,
+        resumeFile: selectedResumeFile.name, // Log filename for debugging
         jobTitle: job.Job_Title,
         jobUrl: job.Job_URL,
         source: job.Source
@@ -198,15 +199,27 @@ export default function TopJobsMatcher() {
     setMessage(`Submitting application for ${job.Job_Title}...`);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/apply', {
-        jobId: job.Job_ID,
-        companyUserId: '', // No companyUserId for external jobs
-        candidateUserId: user.uid,
-        candidateEmail: user.email,
-        resumeText: selectedResumeText,
-        jobTitle: job.Job_Title,
-        jobUrl: job.Job_URL,
-        jobSource: job.Source,
+      // Get the match percentage for the current job and selected resume
+      const currentJobMatchResults = matchedResults[job.Job_ID];
+      const matchPercentage = currentJobMatchResults && currentJobMatchResults.length > 0
+        ? currentJobMatchResults[0].match_percentage
+        : 0; // Default to 0 if no match data
+
+      const formData = new FormData();
+      formData.append('resume_file', selectedResumeFile); // Append the actual resume file
+      formData.append('jobId', job.Job_ID);
+      formData.append('companyUserId', job.companyUserId || ''); // External jobs typically won't have this
+      formData.append('candidateUserId', user.uid);
+      formData.append('candidateEmail', user.email);
+      formData.append('jobTitle', job.Job_Title);
+      formData.append('jobUrl', job.Job_URL || '');
+      formData.append('jobSource', job.Source);
+      formData.append('matchPercentage', matchPercentage.toString());
+
+      const response = await axios.post('http://localhost:5000/api/apply', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data', // Important for sending files
+        },
       });
 
       if (response.data && response.data.message) {
@@ -219,6 +232,11 @@ export default function TopJobsMatcher() {
     } catch (error) {
       console.error('Error submitting application:', error);
       setMessage(`🚫 Failed to submit application: ${error.response?.data?.message || error.message}`);
+    } finally {
+      // Clear the job-specific message after a few seconds
+      setTimeout(() => {
+        setMessage('');
+      }, 5000); // Message disappears after 5 seconds
     }
   };
 
@@ -279,14 +297,14 @@ export default function TopJobsMatcher() {
                   accept=".pdf,.docx,.txt"
                   onChange={handleFileChange}
                 />
-                {resumes.length > 0 && (
-                  <p className="mt-2 text-sm text-gray-600">Selected file: <span className="font-semibold">{resumes[0].name}</span></p>
+                {selectedResumeFile && (
+                  <p className="mt-2 text-sm text-gray-600">Selected file: <span className="font-semibold">{selectedResumeFile.name}</span></p>
                 )}
               </div>
               <button
                 className="btn btn-success px-4 py-2 rounded-full shadow-md hover:bg-green-600 transition duration-300"
                 onClick={handleMatchScrapedJobs}
-                disabled={resumes.length === 0 || scrapedJobs.length === 0 || isLoadingMatch || !user || userRole !== 'candidate'}
+                disabled={!selectedResumeFile || scrapedJobs.length === 0 || isLoadingMatch || !user || userRole !== 'candidate'}
               >
                 {isLoadingMatch ? 'Matching...' : 'Match My Resume to Scraped Jobs'}
               </button>
@@ -339,28 +357,31 @@ export default function TopJobsMatcher() {
                                 })}
                               />
                             </div>
-                            <button
-                              className="btn btn-outline-dark mt-3 px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition duration-300"
-                              onClick={() => {
-                                setMatchedResults(prev => {
-                                  const updated = { ...prev };
-                                  // Find the specific result object within the array for this job ID
-                                  const jobSpecificResults = updated[job.Job_ID];
-                                  if (jobSpecificResults && jobSpecificResults[0]) { // Assuming only one resume matched per job
-                                    jobSpecificResults[0].showKeywords = !jobSpecificResults[0].showKeywords;
-                                  }
-                                  return updated;
-                                });
-                              }}
-                            >
-                              {job.showKeywords ? 'Hide Matched Words' : 'Show Matched Words'}
-                            </button>
+                            {job.matched_keywords && job.matched_keywords.length > 0 && (
+                                <button
+                                    className="btn btn-outline-dark mt-3 px-4 py-2 rounded-full shadow-sm hover:bg-gray-100 transition duration-300"
+                                    onClick={() => {
+                                        setMatchedResults(prev => {
+                                            const updated = { ...prev };
+                                            // Find the specific result object within the array for this job ID
+                                            const jobSpecificResult = updated[job.Job_ID][0];
+                                            if (jobSpecificResult) {
+                                                jobSpecificResult.showKeywords = !jobSpecificResult.showKeywords;
+                                            }
+                                            return { ...updated }; // Return new object to trigger re-render
+                                        });
+                                    }}
+                                >
+                                    {job.showKeywords ? 'Hide Matched Words' : 'Show Matched Words'}
+                                </button>
+                            )}
+
 
                             {job.showKeywords && (
                               <div className="mt-2 w-full">
                                 <MatchingKeywords
-                                  jobDescription={job.Job_Description}
-                                  resumes={[job]} // Pass the job as a resume-like object for keyword extraction
+                                  // Pass the job object directly, as it now contains matched_keywords
+                                  job={job}
                                 />
                               </div>
                             )}
@@ -373,7 +394,7 @@ export default function TopJobsMatcher() {
                             <button
                               className="btn btn-primary px-6 py-2 rounded-full shadow-md hover:bg-blue-700 transition duration-300"
                               onClick={() => handleApply(job)}
-                              disabled={!user || userRole !== 'candidate' || !selectedResumeText}
+                              disabled={!user || userRole !== 'candidate' || !selectedResumeFile}
                             >
                               {user && userRole === 'candidate' ? 'Apply Now' : 'Login as Candidate to Apply'}
                             </button>
@@ -390,4 +411,3 @@ export default function TopJobsMatcher() {
     </div>
   );
 }
-
