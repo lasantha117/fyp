@@ -83,6 +83,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autocomplete="username" // Added autocomplete for email
               />
             </div>
             <div className="mb-3">
@@ -94,6 +95,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autocomplete="current-password" // Added autocomplete for password
               />
             </div>
             <div className="mb-3">
@@ -125,4 +127,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

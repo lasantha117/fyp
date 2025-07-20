@@ -111,6 +111,7 @@ export default function RegistrationPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autocomplete="email" // Added autocomplete for email
               />
             </div>
             <div className="mb-3">
@@ -123,6 +124,7 @@ export default function RegistrationPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength="6" // Firebase requires at least 6 characters for password
+                autocomplete="new-password" // Added autocomplete for new password
               />
             </div>
             <div className="mb-3">
@@ -135,6 +137,7 @@ export default function RegistrationPage() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 minLength="6"
+                autocomplete="new-password" // Added autocomplete for confirming new password
               />
             </div>
             <div className="mb-3">
@@ -162,6 +165,7 @@ export default function RegistrationPage() {
                     value={university}
                     onChange={(e) => setUniversity(e.target.value)}
                     required
+                    autocomplete="organization" // Example autocomplete for university
                   />
                 </div>
                 <div className="mb-3">
@@ -173,6 +177,7 @@ export default function RegistrationPage() {
                     value={degree}
                     onChange={(e) => setDegree(e.target.value)}
                     required
+                    autocomplete="off" // No specific autocomplete for degree, use off
                   />
                 </div>
                 <div className="mb-3">
@@ -184,6 +189,7 @@ export default function RegistrationPage() {
                     value={graduationYear}
                     onChange={(e) => setGraduationYear(e.target.value)}
                     required
+                    autocomplete="off" // No specific autocomplete, use off
                   />
                 </div>
                 <div className="mb-3">
@@ -194,6 +200,7 @@ export default function RegistrationPage() {
                     id="specialization"
                     value={specialization}
                     onChange={(e) => setSpecialization(e.target.value)}
+                    autocomplete="off" // No specific autocomplete, use off
                   />
                 </div>
                 <div className="mb-3">
@@ -204,6 +211,7 @@ export default function RegistrationPage() {
                     value={experienceLevel}
                     onChange={(e) => setExperienceLevel(e.target.value)}
                     required
+                    autocomplete="off" // No specific autocomplete, use off
                   >
                     <option value="">Select Experience Level</option>
                     <option value="Entry-Level">Entry-Level</option>
@@ -227,6 +235,7 @@ export default function RegistrationPage() {
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     required
+                    autocomplete="organization" // Autocomplete for company name
                   />
                 </div>
                 <div className="mb-3">
@@ -238,6 +247,7 @@ export default function RegistrationPage() {
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
                     required
+                    autocomplete="off" // No specific autocomplete, use off
                   />
                 </div>
                 <div className="mb-3">
@@ -248,6 +258,7 @@ export default function RegistrationPage() {
                     value={companySize}
                     onChange={(e) => setCompanySize(e.target.value)}
                     required
+                    autocomplete="off" // No specific autocomplete, use off
                   >
                     <option value="">Select Company Size</option>
                     <option value="1-10">1-10 employees</option>
@@ -266,6 +277,7 @@ export default function RegistrationPage() {
                     id="companyWebsite"
                     value={companyWebsite}
                     onChange={(e) => setCompanyWebsite(e.target.value)}
+                    autocomplete="url" // Autocomplete for URL
                   />
                 </div>
               </>

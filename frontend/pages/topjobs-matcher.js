@@ -12,7 +12,7 @@ import { useRouter } from 'next/router';
 import '../lib/firebase'; // Ensure Firebase is initialized
 
 export default function TopJobsMatcher() {
-  const [resumes, setResumes] = useState([]); // This will hold the file object(s)
+  // Removed 'resumes' state as it's no longer directly used; 'selectedResumeFile' holds the file.
   const [message, setMessage] = useState('');
   const [scrapedJobs, setScrapedJobs] = useState([]);
   const [matchedResults, setMatchedResults] = useState({});
@@ -85,7 +85,6 @@ export default function TopJobsMatcher() {
 
   const handleFileChange = (e) => {
     const file = e.target.files[0]; // Only allow one file
-    setResumes(file ? [file] : []); // Store as an array for consistency
     setSelectedResumeFile(file || null); // Store the actual file object
     setMessage('');
     setMatchedResults({});
@@ -326,12 +325,11 @@ export default function TopJobsMatcher() {
                 Object.values(matchedResults)
                   .flat() // Flatten the array of arrays to get individual match results
                   .sort((a, b) => b.match_percentage - a.match_percentage) // Sort by match percentage
-                  .map((result, _index) => {
+                  .map((job, _index) => {
                     // This variable is intentionally unused, so we can ignore it.
                     // eslint-disable-next-line @typescript-eslint/no-unused-vars
                     const unusedIndex = _index;
-                    // result here is the individual match object, which contains the job details
-                    const job = result; // For clarity, assign result to job
+                    // job here is the individual match object, which contains the job details
                     const percentage = Math.min(100, Math.max(0, Math.round(job.match_percentage)));
 
                     return (
